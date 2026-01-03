@@ -1,13 +1,14 @@
 import Enquiry from "../models/Enquiry.js";
+import { sendAdminEmail } from "../utils/emailService.js";
 
-/* =======================
-   CREATE ENQUIRY (PUBLIC)
-======================= */
+/**
+ * CREATE ENQUIRY
+ */
 export const createEnquiry = async (req, res) => {
   try {
     const { name, email, product, message } = req.body;
 
-    // ✅ VALIDATION
+    // ✅ Validation
     if (!name || !email || !product || !message) {
       return res.status(400).json({
         success: false,
@@ -15,8 +16,8 @@ export const createEnquiry = async (req, res) => {
       });
     }
 
-    // ✅ SAVE TO DATABASE
-    const enquiry = await Enquiry.create({
+    // ✅ Save enquiry FIRST (always)
+    await Enquiry.create({
       name,
       email,
       product,
@@ -24,48 +25,24 @@ export const createEnquiry = async (req, res) => {
       isRead: false,
     });
 
-    // ✅ SUCCESS RESPONSE
+    // ✅ Try sending email (NON-BLOCKING)
+    try {
+      await sendAdminEmail({ name, email, product, message });
+    } catch (mailError) {
+      console.error("❌ Email failed:", mailError.message);
+    }
+
+    // ✅ Always return success
     res.status(201).json({
       success: true,
       message: "Enquiry submitted successfully",
-      data: enquiry,
     });
 
   } catch (error) {
-    console.error("❌ Enquiry Error:", error);
+    console.error("Enquiry Controller Error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
     });
-  }
-};
-
-/* =======================
-   ADMIN ACTIONS
-======================= */
-export const getEnquiries = async (req, res) => {
-  try {
-    const enquiries = await Enquiry.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: enquiries });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-};
-
-export const markRead = async (req, res) => {
-  try {
-    await Enquiry.findByIdAndUpdate(req.params.id, { isRead: true });
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
-  }
-};
-
-export const deleteEnquiry = async (req, res) => {
-  try {
-    await Enquiry.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false });
   }
 };

@@ -2,10 +2,26 @@ import mongoose from "mongoose";
 
 const enquirySchema = new mongoose.Schema(
   {
-    name: String,
-    email: String,
-    product: String,
-    message: String,
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
+    product: {
+      type: String,
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     isRead: {
       type: Boolean,
       default: false,
